@@ -54,7 +54,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		newFile.Seek(0, 0)
 		fileMeta.FileSha1 = util.FileSha1(newFile)
-		meta.UpdateFileMeta(fileMeta)
+		// TODO: 处理异常情况，比如跳转到一个上传失败页面
+		_ = meta.UpdateFileMetaDB(fileMeta)
 
 		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
 	}
@@ -70,14 +71,17 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	filehash := r.Form["filehash"][0]
-	fMeta := meta.GetFileMeta(filehash)
+	fMeta, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	data, err := json.Marshal(fMeta)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-type","application/json")
 	w.Write(data)
 }
 
@@ -86,13 +90,19 @@ func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	limitCnt, _ := strconv.Atoi(r.Form.Get("limit"))
-	fileMetas := meta.GetLastFileMetas(limitCnt)
+	// 从数据库中获取批量文件信息
+	fileMetas, err := meta.GetLastFileMetasDB(limitCnt)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// 封装为json格式返回给客户端
 	data, err := json.Marshal(fileMetas)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-type","application/json")
 	w.Write(data)
 }
 
@@ -100,8 +110,13 @@ func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
 func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fsha1 := r.Form.Get("filehash")
-	fm := meta.GetFileMeta(fsha1)
+	fm, err := meta.GetFileMetaDB(fsha1)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
+	// 打开已上传的文件
 	f, err := os.Open(fm.Location)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -109,12 +124,14 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
+	// 读取文件内容
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	// 设置header并将文件内容返回给客户端
 	w.Header().Set("Content-Type", "application/octect-stream")
 	w.Header().Set("content-disposition", "attachment; filename=\""+fm.FileName+"\"")
 	w.Write(data)
@@ -132,14 +149,26 @@ func FileMetaUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
+	// 只支持post方法
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	curFileMeta := meta.GetFileMeta(fileSha1)
+	// 根据filehash获取文件元信息
+	curFileMeta, err := meta.GetFileMetaDB(fileSha1)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// 将带有新文件名的元信息结构写入到数据库表
 	curFileMeta.FileName = newFileName
-	meta.UpdateFileMeta(curFileMeta)
+	suc := meta.UpdateFileMetaDB(curFileMeta)
+	if !suc {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	data, err := json.Marshal(curFileMeta)
 	if err != nil {
@@ -147,7 +176,6 @@ func FileMetaUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-type","application/json")
 	w.Write(data)
 }
 
@@ -156,10 +184,19 @@ func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fileSha1 := r.Form.Get("filehash")
 
-	fMeta := meta.GetFileMeta(fileSha1)
+	fMeta, err := meta.GetFileMetaDB(fileSha1)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// 删除本地文件
 	os.Remove(fMeta.Location)
-
-	meta.RemoveFileMeta(fileSha1)
-
+	// 删除文件表中的一条记录
+	suc := meta.OnFileRemovedDB(fileSha1)
+	if !suc {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
