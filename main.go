@@ -21,6 +21,12 @@ func main() {
 	http.HandleFunc("/file/update", handler.FileMetaUpdateHandler)
 	http.HandleFunc("/file/delete", handler.FileDeleteHandler)
 
+	// 用户相关接口
+	// http.HandleFunc("/", handler.SignInHandler)
+	http.HandleFunc("/user/signup", handler.SignupHandler)
+	http.HandleFunc("/user/signin", handler.SignInHandler)
+	http.HandleFunc("/user/info", handler.HTTPInterceptor(handler.UserInfoHandler))
+
 	// 监听端口
 	fmt.Println("上传服务正在启动, 监听端口:8080...")
 	err := http.ListenAndServe(":8080", nil)

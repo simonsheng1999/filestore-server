@@ -11,16 +11,8 @@ import (
 
 var db *sql.DB
 
-const (
-	USERNAME = "root"
-	PASSWORD = "123456"
-	NETWORK  = "tcp"
-	SERVER   = "localhost"
-	PORT     = 3306
-	DATABASE = "fileserver"
-)
-
 func init() {
+	//db, _ = sql.Open("mysql", "test:test@tcp(127.0.0.1:13306)/fileserver?charset=utf8")
 	db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:13306)/fileserver?charset=utf8")
 	//dsn := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=utf8",USERNAME,PASSWORD,NETWORK,SERVER,PORT,DATABASE)
 	//db ,err := sql.Open("mysql",dsn)
@@ -42,28 +34,34 @@ func DBConn() *sql.DB {
 }
 
 func ParseRows(rows *sql.Rows) []map[string]interface{} {
-	columns, _ := rows.Columns()
-	scanArgs := make([]interface{}, len(columns))
-	values := make([]interface{}, len(columns))
-	for j := range values {
-		scanArgs[j] = &values[j]
-	}
-
-	record := make(map[string]interface{})
-	records := make([]map[string]interface{}, 0)
-	for rows.Next() {
-		//将行数据保存到record字典
-		err := rows.Scan(scanArgs...)
-		checkErr(err)
-
-		for i, col := range values {
-			if col != nil {
-				record[columns[i]] = col
-			}
-		}
-		records = append(records, record)
-	}
-	return records
+    // 获取记录列(名)
+    columns, _ := rows.Columns()
+    // 创建列值的slice (values)，并为每一列初始化一个指针
+    // scanArgs用作rows.Scan中的传入参数
+    scanArgs := make([]interface{}, len(columns))
+    values := make([]interface{}, len(columns))
+    for j := range values {
+        scanArgs[j] = &values[j]
+    }
+ 
+    // record为每次迭代中存储行记录的临时变量
+    record := make(map[string]interface{})
+    // records为函数最终返回的数据(列表)
+    records := make([]map[string]interface{}, 0)
+    // 迭代行记录
+    for rows.Next() {
+        //每Scan一次，将一行数据保存到record字典
+        err := rows.Scan(scanArgs...)
+        checkErr(err)
+ 
+        for i, col := range values {
+            if col != nil {
+                record[columns[i]] = col
+            }
+        }
+        records = append(records, record)
+    }
+    return records
 }
 
 func checkErr(err error) {

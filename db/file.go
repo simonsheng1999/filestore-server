@@ -104,7 +104,6 @@ func GetFileMetaList(limit int) ([]TableFile, error) {
 		}
 		tfiles = append(tfiles, tfile)
 	}
-	fmt.Println(len(tfiles))
 	return tfiles, nil
 }
 

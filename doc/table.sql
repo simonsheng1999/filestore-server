@@ -27,9 +27,9 @@ CREATE TABLE `tbl_user` (
   `profile` text COMMENT '用户属性',
   `status` int(11) NOT NULL DEFAULT '0' COMMENT '账户状态(启用/禁用/锁定/标记删除等)',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_phone` (`phone`),
+  UNIQUE KEY `idx_username` (`user_name`),
   KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `tbl_user_token` (
     `id` int(11) NOT NULL AUTO_INCREMENT,

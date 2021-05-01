@@ -33,10 +33,8 @@ func GetFileMeta(fileSha1 string) FileMeta {
 
 // GetLastFileMetas : 获取批量的文件元信息列表
 func GetLastFileMetas(count int) []FileMeta {
-	// 有误: fMetaArray := make([]FileMeta, len(fileMetas))
+	// fMetaArray := make([]FileMeta, len(fileMetas))
 	var fMetaArray []FileMeta
-	// 或者 fMetaArray := make([]FileMeta, 0)
-
 	for _, v := range fileMetas {
 		fMetaArray = append(fMetaArray, v)
 	}
@@ -56,7 +54,7 @@ func RemoveFileMeta(fileSha1 string) {
 // GetFileMetaDB : 从mysql获取文件元信息
 func GetFileMetaDB(fileSha1 string) (FileMeta, error) {
 	tfile, err := mydb.GetFileMeta(fileSha1)
-	if err != nil {
+	if err != nil || tfile == nil {
 		return FileMeta{}, err
 	}
 	fmeta := FileMeta{
