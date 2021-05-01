@@ -39,9 +39,6 @@ func GetLastFileMetas(count int) []FileMeta {
 	}
 
 	sort.Sort(ByUploadTime(fMetaArray))
-	if count > len(fMetaArray) {
-		return fMetaArray
-	}
 	return fMetaArray[0:count]
 }
 

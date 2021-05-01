@@ -1,37 +1,73 @@
-## 划重点
+## 分块上传与断点上传逻辑流程示意图
 
-- 秒传原理
+<img src='/doc/mpupload_process.png' width="600px"></img>
 
-场景： 同一文件有人上传过了后，其他人再要上传时就可以不用重复传了，只需要在数据库中增加一条映射记录即可，这样就算是完成了一次上传。
+## 快速启动应用
 
-原理： 文件 hash 具有全局唯一性，不同文件的 sha1 值碰撞几率极低；前端上传前计算文件的 sha1 值，然后提交到服务端进行比对，不存在时才真正开始上传，否则秒传。
+- 配置 MySQL 连接 (db/mysql/conn.go)
 
-## 关于 go modules
+```golang
+// 根据实际情况修改连接参数
+db, err = sql.Open("mysql", "test:test@tcp(127.0.0.1:3306)/fileserver?charset=utf8")
+```
 
-在 go1.11 之后，官方推出了 Go Modules 这原生的包管理工具；相对于 vendor, go mod 可以更有效的进行包版本管理。
-
-- 在 1.12 及之前， go modules 需要配置环境变量来开启此功能:
+- 启动应用
 
 ```bash
-# 分别有 on off auto
-go env -w GO111MODULE=on
+# 去到工程根目录下
+# go1.13或以上开启go modules (初始化一次)
+go mod init filestore-server
+# go run 启动
+go run main.go
 ```
 
-- 配置代理。因为众所周知的原因，有些包我们国内无法访问，一般需要通过代理(如 goproxy.cn):
+- 前端主页效果
 
-```bash
-go env -w GOSUMDB=sum.golang.google.cn
-go env -w GOPROXY=https://goproxy.cn,direct
-# 查看是否成功(go env的输出中包含代理信息)
-go env
+<img src="/doc/home.png"></img>
+
+## 以下为代码更新提示:-)
+
+- (2020-03-31)已将原有加载的远程资源文件(css, js 等)下载到项目本地，可以加快页面的加载速度
+
+资源引用的 html 也同步跟新，比如 home.html
+
+```html
+<head>
+  <script src="/static/js/jquery.min.js"></script>
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css" />
+  <script src="/static/js/bootstrap.min.js"></script>
+  <script src="/static/js/auth.js"></script>
+  <script src="/static/js/layer.js"></script>
+</head>
 ```
 
-- go mod 初始化
+- (2020-04-02)完善文件合并逻辑
 
+详细参考：https://git.imooc.com/coding-323/filestore-server/src/charter6/handler/mpupload.go
+
+```go
+// ...
+	// 4. 合并分块 (备注: 更新于2020/04/01; 此合并逻辑非必须实现，因后期转移到ceph/oss时也可以通过分块方式上传)
+	if mergeSuc := util.MergeChuncksByShell(ChunkDir+uploadID, MergeDir+filehash, filehash); !mergeSuc {
+		w.Write(util.NewRespMsg(-3, "complete upload failed", nil).JSONBytes())
+		return
+	}
+// ...
 ```
-go mod init <指定一个modeul名，如工程名>
+
+- (2020-04-04)完善取消分块上传逻辑
+
+详细参考：https://git.imooc.com/coding-323/filestore-server/src/charter6/handler/mpupload.go
+
+```go
+// CancelUploadHandler : 通知取消上传
+// 更新于2020-04
+func CancelUploadHandler(w http.ResponseWriter, r *http.Request) {
+    // ...
+}
 ```
 
-在项目根目录下成功初始化后，会生成一个 go.mod 和 go.sum 文件。在之后执行 go build 或 go run 时，会触发依赖解析，并且下载对应的依赖包。
+- (2020-04-15)完善断点续传与测试脚本
 
-更具体的用法可以参考网上其他教程哦(如https://github.com/golang/go/wiki/Modules)。
+详细参考: https://git.imooc.com/coding-323/filestore-server/src/charter6/test
