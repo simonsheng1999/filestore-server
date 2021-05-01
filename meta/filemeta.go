@@ -33,8 +33,7 @@ func GetFileMeta(fileSha1 string) FileMeta {
 
 // GetLastFileMetas : 获取批量的文件元信息列表
 func GetLastFileMetas(count int) []FileMeta {
-	// fMetaArray := make([]FileMeta, len(fileMetas))
-	var fMetaArray []FileMeta
+	fMetaArray := make([]FileMeta, len(fileMetas))
 	for _, v := range fileMetas {
 		fMetaArray = append(fMetaArray, v)
 	}

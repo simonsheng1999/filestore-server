@@ -1,26 +1,10 @@
 ## 划重点
 
-- 理解和使用中间件
+- 秒传原理
 
-一个好的中间件是能够根据需求实现可插拔的。这就意味着可以在接口级别嵌入一个中间件，他就能直接正常的工作。它不会污染原有的代码，不会改变原始的逻辑，也不会影响原有的编码方式。需要它的时候就把它安插在指定的位置，不需要的时候就把它移除掉。
+场景： 同一文件有人上传过了后，其他人再要上传时就可以不用重复传了，只需要在数据库中增加一条映射记录即可，这样就算是完成了一次上传。
 
-在 Go 语言中，在标准库中，中间件的应用是非常普遍的。一个比较典型的场景，在 net/http 里的某些业务 handler，可以配置 TimeoutHandler 作为中间件，用来处理请求超时的问题；这样业务 handler 专注于处理业务逻辑即可，无需亲自管理超时。
-
-同样，在 API 鉴权方面，中间件也是发挥了不可或缺的作用：API 请求首先经过配置好的中间件，只有校验通过了才会将请求转发到下一级中间件或具体的业务 handler 进行逻辑的处理。以下是 API 拦截器使用示例:
-
-```go
-func HTTPInterceptor(h http.HandlerFunc) http.HandlerFunc {
-    return http.HandlerFunc(
-        func(w http.ResponseWriter, r *http.Request) {
-            r.ParseForm()
-            // TODO: 进行身份验证，比如校验cookie或token
-            h(w, r)
-        })
-}
-
-// 然后在创建路由时类似这么调用:
-// http.HandleFunc("/test", HTTPInterceptor(YourCustomHandler))
-```
+原理： 文件 hash 具有全局唯一性，不同文件的 sha1 值碰撞几率极低；前端上传前计算文件的 sha1 值，然后提交到服务端进行比对，不存在时才真正开始上传，否则秒传。
 
 ## 关于 go modules
 
@@ -45,7 +29,7 @@ go env
 - go mod 初始化
 
 ```
-go mod init <指定一个module名，如工程名>
+go mod init <指定一个modeul名，如工程名>
 ```
 
 在项目根目录下成功初始化后，会生成一个 go.mod 和 go.sum 文件。在之后执行 go build 或 go run 时，会触发依赖解析，并且下载对应的依赖包。
