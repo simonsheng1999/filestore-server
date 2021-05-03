@@ -15,6 +15,7 @@
 # vendor/
 
 /.idea/
+.idea
 /try/
 /other/
 /mysql-master-slave-service/
