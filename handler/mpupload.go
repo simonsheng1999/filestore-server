@@ -164,7 +164,7 @@ func UploadPartHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 校验分块hash (updated at 2020-05)
+	// 校验分块hash (updated at 2021-05)
 	cmpSha1, err := util.ComputeSha1ByShell(fpath)
 	if err != nil || cmpSha1 != chunkSha1 {
 		fmt.Printf("Verify chunk sha1 failed, compare OK: %t, err:%+v\n",
