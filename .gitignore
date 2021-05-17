@@ -14,6 +14,9 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+/.idea/
+.idea
+.idea/
 /try/
 /other/
 /mysql-master-slave-service/
