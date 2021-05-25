@@ -30,8 +30,8 @@
                 <tr style="margin-bottom: 20px;">
                     <td style="width:15%;height: 100%;">
                         <div class="account">
-                            <img class="avatar" src="/static/img/avatar.jpg"></img><br>
-                            <span class="font-title">用户名:</span>
+                            <img class="avatar" src="/static/img/tag.jpg"></img><br>
+                            <span class="font-title">用户名(学生）:</span>
                             <span class="font-content" id="username"></span><br>
 
                             <span class="font-title">注册时间:</span>
@@ -45,6 +45,14 @@
                             </button>
                             <button class="btn btn-primary home-button" onclick="toMPUploadFile()">分块上传文件
                             </button>
+                            文件类型：
+                            <select>
+                                <option value ="pdf">全部</option>
+                                <option value ="zip">课件</option>
+                                <option value ="pdf">作业</option>
+                                <option value ="pdf">文件</option>
+                                <option value ="pdf">其他</option>
+                            </select>
                             <div class="line-horizon"></div>
                         </div>
                         <div style="width:100%;">
@@ -119,6 +127,7 @@
                     '<option value="dl">下载</option>' +
                     '<option value="rangedl">断点下载</option>' +
                     '<option value="rename">重命名</option>' +
+                    '<option value="re">批改</option>' +
                     '<option value="del">删除</option>';
 
                 for (var i = 0; i < data.length; i++) {
@@ -185,6 +194,8 @@
     function toLogout() {
         logout();
     }
+
+
 
     function downloadFile(durl) {
         $.ajax({
@@ -263,6 +274,10 @@
                 window.location.href = '/static/view/home.html';
             }
         });
+    }
+
+    function Classify() {
+
     }
 </script>
 
